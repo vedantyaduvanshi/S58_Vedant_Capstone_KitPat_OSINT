@@ -1,32 +1,29 @@
 const { default: axios } = require("axios");
 const { validateAccountId } = require("../helpers/validation");
 const User = require("../models/User");
+const crypto = require("crypto");
 
 
 exports.registerNumber = async (req, res) => {
   try {
-      const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-      let result = '';
-      for (let i = 0; i < 25; i++) {
-          const randomIndex = Math.floor(Math.random() * characters.length);
-          result += characters[randomIndex];
-      }
+    
+    const accountId = crypto.randomBytes(19).toString('hex').slice(0, 25); // 25 characters long
 
-    const accountId = result
 
     const checkAccountId = await User.findOne({ accountId });
 
-     if (checkAccountId) {
+    if (checkAccountId) {
       return res.status(400).json({
         message: "False",
       });
-    }else {
-      res.send({
+    } else {
+      res.status(200).json({
         accountId: accountId,
-     });
+      });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error registering number:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -126,7 +123,7 @@ if (amount === 15 || amount === 29 || amount === 59 || amount === 99 || amount =
       try {
         const response = await axios(config);
         console.log(response.data.id);
-        //only sent invoiec url and nothing else to frontend
+        
         await User.findOneAndUpdate({ accountId: user}, { currentPayment: response.data.id });
         res.json(response.data.invoice_url);
       } catch (error) {
